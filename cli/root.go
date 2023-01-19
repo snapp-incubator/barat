@@ -2,5 +2,5 @@
 package cli
 
 var CLI struct {
-	Checker checkerCmd `cmd:"checker" help:"Check all toml file and make sure that all of them are valid."`
+	Checker checkerCmd `cmd:"" help:"Check all toml file and make sure that all of them are valid."`
 }
