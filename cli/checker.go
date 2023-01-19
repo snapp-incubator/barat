@@ -10,8 +10,8 @@ import (
 )
 
 type checkerCmd struct {
-	ExcludeKeyRegex []string `short:"e" help:"Path to toml files."`
-	Paths           []string `arg:"" name:"path" help:"Paths to load toml files." type:"existingdir"`
+	ExcludeKeyRegex []string `short:"e" help:"exclude keys that match the given regex."`
+	Paths           []string `arg:"" name:"path" help:"paths to load toml files." type:"existingdir"`
 }
 
 func (c *checkerCmd) Run() error {
