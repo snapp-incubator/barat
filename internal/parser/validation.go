@@ -22,21 +22,21 @@ func Validation(tomlFiles map[string]map[string]interface{}, excludeRegex []stri
 			if d, ok := value.(map[string]interface{})["description"]; ok {
 				if d == "" {
 					errs = append(errs,
-						fmt.Errorf("description of key \"%s\" in tag \"%s\" is empty", key, keyTag))
+						fmt.Errorf("description key is empty: key \"%s\", tag \"%s\"", key, keyTag))
 				}
 			} else {
 				errs = append(errs,
-					fmt.Errorf("description of key \"%s\" in tag \"%s\" not found", key, keyTag))
+					fmt.Errorf("description key not found: key \"%s\", tag \"%s\"", key, keyTag))
 			}
 
 			if o, ok := value.(map[string]interface{})["other"]; ok {
 				if o == "" {
 					errs = append(errs,
-						fmt.Errorf("other of key \"%s\" in tag \"%s\" is empty", key, keyTag))
+						fmt.Errorf("other key is empty: key \"%s\", tag \"%s\" ", key, keyTag))
 				}
 			} else {
 				errs = append(errs,
-					fmt.Errorf("other of key \"%s\" in tag \"%s\" not found", key, keyTag))
+					fmt.Errorf("other key not found: key \"%s\", tag \"%s\"", key, keyTag))
 			}
 		}
 	}
