@@ -22,7 +22,7 @@ func LoadTomlFiles(paths []string) (map[string]map[string]interface{}, error) {
 				continue
 			}
 
-			if entry.Name()[len(entry.Name())-5:] == ".toml" {
+			if len(entry.Name()) > 5 && entry.Name()[len(entry.Name())-5:] == ".toml" {
 				tag := strings.Split(entry.Name(), ".")[1]
 				if _, ok := tomlFiles[tag]; !ok {
 					tomlFiles[tag] = make(map[string]interface{})
