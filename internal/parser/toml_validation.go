@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-func Validation(tomlFiles map[string]map[string]interface{}, excludeRegex []string) (errs []error) {
+func TomlValidation(tomlFiles map[string]map[string]interface{}, excludeRegex []string) (errs []error) {
 	for keyTag, valueTag := range tomlFiles {
 		for key, value := range valueTag {
 			// check if key is valid for all tags or not
