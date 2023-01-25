@@ -71,6 +71,29 @@ You can map this function to argument number 1 by adding this to your command:
 
 It's imported to mention that the number of arguments in your function starts from 0.
 
+## Barat in CI
+
+You can check all flags and helps by using this command:
+
+```bash
+$ barat checker --help 
+
+Usage: barat checker <path> ...
+
+Check all toml file and make sure that all of them are valid.
+
+Arguments:
+  <path> ...    paths to load toml files.
+
+Flags:
+  -h, --help                                          Show context-sensitive help.
+
+  -e, --exclude-key-regex=EXCLUDE-KEY-REGEX,...       exclude keys that match the given regex.
+      --map-function-names-to-arg-no=KEY=VALUE;...    it's map of the function's name that returns the message by i18n To number of MessageID in arguments.
+      --project-path=STRING                           paths to project for check all files.
+      --exclude-folders=EXCLUDE-FOLDERS,...           list of exclude folders for check localization.
+```
+
 # Help Us
 You can contribute to improving this tool by sending pull requests or issues on GitHub.  
 Please send us your feedback. Thanks!
