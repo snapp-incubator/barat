@@ -1,4 +1,4 @@
-![Logo](https://raw.githubusercontent.com/snapp-incubator/barat/3d8f169319dcb7398ab3e7b7fbb645f848dc897a/BARAT.png?token=GHSAT0AAAAAABZPQC74GUQWQIR7I2YRUHMGY6RB27A)
+![Logo](https://user-images.githubusercontent.com/49960770/214579375-0a8e1cee-d9cd-4cc5-9453-42aff2c26357.png)
 
 # Barat
 Barat is a linter for localization in Golang projects. Barat check your Toml files for missing keys and duplicate keys.
