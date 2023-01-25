@@ -72,7 +72,7 @@ We describe the flags in the following table:
 | `--exclude-folders`              | Folders that you want to exclude from checking.               |
 | `--map-function-names-to-arg-no` | Map function names to argument number of MessageID.           |
 
-### more details about `--map-function-names-to-arg-no`
+### More details about `--map-function-names-to-arg-no`
 
 In this flag, you can map function names to argument number of MessageID. For example, if you have a function like this:
 
