@@ -1,0 +1,76 @@
+![Logo](https://raw.githubusercontent.com/snapp-incubator/barat/3d8f169319dcb7398ab3e7b7fbb645f848dc897a/BARAT.png?token=GHSAT0AAAAAABZPQC74GUQWQIR7I2YRUHMGY6RB27A)
+
+# Barat
+Barat is a linter for localization in Golang projects. Barat check your Toml files for missing keys and duplicate keys.
+Also, Barat can check your code for missing localization keys.
+
+## Installation
+```bash
+go get github.com/snapp-incubator/barat
+```
+
+or
+
+```bash
+go install github.com/snapp-incubator/barat@latest
+```
+
+## How to use
+
+### Check your toml files
+For check your toml files, you can use this command:
+
+```bash
+barat checker <path to toml files> <path to toml files> ...
+```
+
+You can exclude some keys from checking by adding them to the `--exclude-key-regex` flag in your command.
+```bash 
+barat checker <path to toml files> <path to toml files> ... \
+      --exclude-key-regex="ExcludeKey","key*"
+```
+
+Barat support simple regex for exclude keys. When you use `*` in part of your regex, it will be replaced with `.*`.
+
+## Check your code
+If you want to check your code for missing localization keys, you can use this command:
+
+```bash
+barat checker <path to toml files> <path to toml files> ... 
+      --exclude-key-regex="ExcludeKey","key*" \ 
+      --project-path <path to your project> \
+      --exclude-folders <folder name>,<folder name>,... \
+      --map-function-names-to-arg-no "GetMessages=1;getMessage=0"
+```
+
+We describe the flags in the following table:
+
+| Flag                             | Description                                                   |
+|----------------------------------|---------------------------------------------------------------|
+| `--project-path`                 | Path to your project. Barat search recursive for `.go` files. |
+| `--exclude-folders`              | Folders that you want to exclude from checking.               |
+| `--map-function-names-to-arg-no` | Map function names to argument number of MessageID.           |
+
+### more details about `--map-function-names-to-arg-no`
+
+In this flag, you can map function names to argument number of MessageID. For example, if you have a function like this:
+
+```go
+// GetMessages is function for getting internationalized messages.
+func GetMessages(lang string, messageID string, templateData interface{}) (string, error) {
+loc := i18n.NewLocalizer(Bundle, lang)
+return loc.Localize(&i18n.LocalizeConfig{MessageID: messageID, TemplateData: templateData})
+}
+```
+
+You can map this function to argument number 1 by adding this to your command:
+
+```bash
+--map-function-names-to-arg-no "GetMessages=1"
+```
+
+It's imported to mention that the number of arguments in your function starts from 0.
+
+# Help Us
+You can contribute to improving this tool by sending pull requests or issues on GitHub.  
+Please send us your feedback. Thanks!
