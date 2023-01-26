@@ -5,11 +5,6 @@ Barat is a linter for localization in Golang projects. Barat check your Toml fil
 Also, Barat can check your code for missing localization keys.
 
 ## Installation
-```bash
-go get github.com/snapp-incubator/barat
-```
-
-or
 
 ```bash
 go install github.com/snapp-incubator/barat@latest
