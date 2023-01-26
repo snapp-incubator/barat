@@ -6,11 +6,13 @@ import (
 
 	"github.com/fatih/color"
 
+	"github.com/snapp-incubator/barat/internal/config"
 	"github.com/snapp-incubator/barat/internal/parser"
 )
 
 type checkerCmd struct {
-	Paths                   []string       `arg:"" name:"path" help:"paths to load toml files." type:"existingdir"`
+	ConfigPath              string         `help:"Path to config file."`
+	TomlPaths               []string       `name:"toml-paths" help:"paths to load toml files." type:"existingdir"`
 	ExcludeKeyRegex         []string       `short:"e" help:"exclude keys that match the given regex."`
 	MapFunctionNamesToArgNo map[string]int `help:"it's map of the function's name that returns the message by i18n To number of MessageID in arguments."`
 	ProjectPath             string         `help:"paths to project for check all files." type:"existingdir"`
@@ -18,7 +20,7 @@ type checkerCmd struct {
 }
 
 func (c *checkerCmd) Run() error {
-	if c.ExcludeKeyRegex != nil {
+	if len(c.ExcludeKeyRegex) > 0 {
 		var tmp []string
 		for _, regex := range c.ExcludeKeyRegex {
 			regex = strings.Replace(regex, "*", "(.*?)", -1)
@@ -27,27 +29,58 @@ func (c *checkerCmd) Run() error {
 		c.ExcludeKeyRegex = tmp
 	}
 
-	tomlFiles, err := parser.LoadTomlFiles(c.Paths)
+	if c.ConfigPath != "" {
+		err := config.LoadConfig(c.ConfigPath)
+		if err != nil {
+			return err
+		}
+	} else {
+		codeCheck := false
+		if c.ProjectPath != "" {
+			codeCheck = true
+		}
+		config.C = &config.Config{
+			TomlPaths:    c.TomlPaths,
+			ProjectPath:  c.ProjectPath,
+			Exclude:      config.Exclude{Folders: c.ExcludeFolders, RegexKey: c.ExcludeKeyRegex},
+			MessageFuncs: config.ToMessageFuncs(c.MapFunctionNamesToArgNo),
+			Options: config.Opts{
+				Enable: config.Enable{
+					TomlCheck:        true,
+					DescriptionCheck: true,
+					OtherKeyCheck:    true,
+					CodeCheck:        codeCheck,
+				},
+			},
+		}
+	}
+
+	tomlFiles, err := parser.LoadTomlFiles(config.C.TomlPaths)
 	if err != nil {
 		return err
 	}
 
 	// check all toml files for duplicate keys and missing keys
-	errs := parser.TomlValidation(tomlFiles, c.ExcludeKeyRegex)
-	if errs != nil {
-		errorsShower(errs)
-		return fmt.Errorf("toml validation failed: %d errors", len(errs))
+	var errs []error
+	if config.C.Options.Enable.TomlCheck {
+		errs = parser.TomlValidation(tomlFiles)
+		if errs != nil {
+			errs = append(errs, fmt.Errorf("toml validation failed: %d errors", len(errs)))
+			errorsShower(errs)
+		}
 	}
 
 	// check code for localization functions and find keys that are not available in toml files
-	if c.ProjectPath != "" {
-		errs = parser.CheckCodeForLocalizationFunctions(
-			tomlFiles, c.ExcludeKeyRegex, c.ExcludeFolders, c.MapFunctionNamesToArgNo, c.ProjectPath,
-		)
+	if config.C.Options.Enable.CodeCheck {
+		errs = parser.CheckCodeForLocalizationFunctions(tomlFiles, config.C.ProjectPath)
 		if errs != nil {
+			errs = append(errs, fmt.Errorf("code localization validation failed: %d errors", len(errs)))
 			errorsShower(errs)
-			return fmt.Errorf("code localization validation failed: %d errors", len(errs))
 		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf("validation failed: %d errors", len(errs))
 	}
 	return nil
 }

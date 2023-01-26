@@ -1,0 +1,26 @@
+project-path: "./project-path"
+
+toml-path:
+  - "./project-path/toml/en"
+  - "./project-path/toml/fa"
+  - "./project-path/toml/ru"
+
+exclude:
+  folders:
+    - "vendor"
+    - "assets"
+  regex-key:
+    - "ToBeExcludedKey1"
+    - "KeyToBe*"
+
+message-func:
+  - name: "GetMessage"
+    message-id-no: 1
+
+options:
+  enable:
+    toml-check: true
+    description-check: false
+    other-key-check: true
+    code-check: true
+

@@ -4,9 +4,9 @@ go 1.18
 
 require (
 	github.com/alecthomas/kong v0.7.1
-	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.13.0
 	github.com/pelletier/go-toml/v2 v2.0.6
+	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
