@@ -7,12 +7,11 @@ import (
 	"go/token"
 	"os"
 	"strings"
+
+	"github.com/snapp-incubator/barat/internal/config"
 )
 
-func CheckCodeForLocalizationFunctions(
-	tomlFiles map[string]map[string]interface{},
-	excludeKeyRegex, excludeFolders []string, MapFunctionNamesToArgNo map[string]int,
-	projectPath string) (errs []error) {
+func CheckCodeForLocalizationFunctions(tomlFiles map[string]map[string]interface{}, projectPath string) (errs []error) {
 
 	// recursive search for all files in projectPath
 	entries, err := os.ReadDir(projectPath)
@@ -24,18 +23,15 @@ ENTRY:
 	for _, entry := range entries {
 		if entry.IsDir() {
 			// check list of exclude folders from search
-			for _, excludeFolder := range excludeFolders {
+			for _, excludeFolder := range config.C.Exclude.Folders {
 				if entry.Name() == excludeFolder {
 					continue ENTRY
 				}
 			}
 			errs = append(errs, CheckCodeForLocalizationFunctions(
-				tomlFiles, excludeKeyRegex, excludeFolders, MapFunctionNamesToArgNo,
-				projectPath+"/"+entry.Name())...)
+				tomlFiles, projectPath+"/"+entry.Name())...)
 		} else if len(entry.Name()) > 3 && entry.Name()[len(entry.Name())-3:] == ".go" {
-			errs = append(errs,
-				fileParser(tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo,
-					projectPath+"/"+entry.Name())...)
+			errs = append(errs, fileParser(tomlFiles, projectPath+"/"+entry.Name())...)
 		}
 	}
 
@@ -44,8 +40,6 @@ ENTRY:
 
 func fileParser(
 	tomlFiles map[string]map[string]interface{},
-	excludeKeyRegex []string,
-	MapFunctionNamesToArgNo map[string]int,
 	filePath string) (errs []error) {
 	fileSet := token.NewFileSet()
 
@@ -65,7 +59,7 @@ func fileParser(
 			if decl.(*ast.FuncDecl).Body != nil {
 				for _, spec := range decl.(*ast.FuncDecl).Body.List {
 					errs = append(errs,
-						parsLineOfCode(spec, tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo)...)
+						parsLineOfCode(spec, tomlFiles)...)
 				}
 			}
 		}
@@ -74,34 +68,31 @@ func fileParser(
 	return errs
 }
 
-func parsLineOfCode(stmt ast.Stmt,
-	tomlFiles map[string]map[string]interface{},
-	excludeKeyRegex []string,
-	MapFunctionNamesToArgNo map[string]int) (errs []error) {
+func parsLineOfCode(stmt ast.Stmt, tomlFiles map[string]map[string]interface{}) (errs []error) {
 	switch stmt.(type) {
 	case *ast.AssignStmt: // find assignment statement (e.g. var a = "hello")
 		for _, rhs := range stmt.(*ast.AssignStmt).Rhs { // iterate right side of assignment statement
 			switch rhs.(type) {
 			case *ast.CallExpr: // find call expression (e.g. p.getMessage("hello"))
 				isSelectedFunction := false
-				index := 0 // index of MessageID in args of function that found in MapFunctionNamesToArgNo
+				index := 0 // index of MessageID in args of function that found in MessageFunc
 				fn := ""   // name of function that found in MapFunctionNamesToArgNo
 				switch rhs.(*ast.CallExpr).Fun.(type) {
 				case *ast.SelectorExpr: // find selector expression (e.g. package.getMessage)
-					for functionName, i := range MapFunctionNamesToArgNo {
-						if rhs.(*ast.CallExpr).Fun.(*ast.SelectorExpr).Sel.Name == functionName {
+					for _, m := range config.C.MessageFuncs {
+						if rhs.(*ast.CallExpr).Fun.(*ast.SelectorExpr).Sel.Name == m.Name {
 							isSelectedFunction = true
-							index = i
-							fn = functionName
+							index = m.MessageIDNo
+							fn = m.Name
 							break
 						}
 					}
 				case *ast.Ident: // find identifier (e.g. getMessage)
-					for functionName, i := range MapFunctionNamesToArgNo {
-						if rhs.(*ast.CallExpr).Fun.(*ast.Ident).Name == functionName {
+					for _, m := range config.C.MessageFuncs {
+						if rhs.(*ast.CallExpr).Fun.(*ast.Ident).Name == m.Name {
 							isSelectedFunction = true
-							index = i
-							fn = functionName
+							index = m.MessageIDNo
+							fn = m.Name
 							break
 						}
 					}
@@ -133,19 +124,19 @@ func parsLineOfCode(stmt ast.Stmt,
 	switch stmt.(type) {
 	case *ast.ForStmt:
 		for _, stmt := range stmt.(*ast.ForStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo)...)
+			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
 		}
 	case *ast.RangeStmt:
 		for _, stmt := range stmt.(*ast.RangeStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo)...)
+			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
 		}
 	case *ast.IfStmt:
 		for _, stmt := range stmt.(*ast.IfStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo)...)
+			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
 		}
 	case *ast.SwitchStmt:
 		for _, stmt := range stmt.(*ast.SwitchStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles, excludeKeyRegex, MapFunctionNamesToArgNo)...)
+			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
 		}
 	}
 
