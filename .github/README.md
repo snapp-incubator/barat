@@ -79,8 +79,8 @@ In this flag, you can map function names to argument number of MessageID. For ex
 ```go
 // GetMessages is function for getting internationalized messages.
 func GetMessages(lang string, messageID string, templateData interface{}) (string, error) {
-loc := i18n.NewLocalizer(Bundle, lang)
-return loc.Localize(&i18n.LocalizeConfig{MessageID: messageID, TemplateData: templateData})
+    loc := i18n.NewLocalizer(Bundle, lang)
+    return loc.Localize(&i18n.LocalizeConfig{MessageID: messageID, TemplateData: templateData})
 }
 ```
 
