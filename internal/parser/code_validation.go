@@ -6,15 +6,16 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/snapp-incubator/barat/internal/config"
 )
 
-func CheckCodeForLocalizationFunctions(tomlFiles map[string]map[string]interface{}, projectPath string) (errs []error) {
-
+// CheckCodeForLocalizationFunctions is function for finding go files and recursive search in directories.
+func CheckCodeForLocalizationFunctions(mapLangToToml map[Language]TomlFile, path string) (errs []error) {
 	// recursive search for all files in projectPath
-	entries, err := os.ReadDir(projectPath)
+	entries, err := os.ReadDir(path)
 	if err != nil {
 		return []error{err}
 	}
@@ -29,27 +30,30 @@ ENTRY:
 				}
 			}
 			errs = append(errs, CheckCodeForLocalizationFunctions(
-				tomlFiles, projectPath+"/"+entry.Name())...)
-		} else if len(entry.Name()) > 3 && entry.Name()[len(entry.Name())-3:] == ".go" {
-			errs = append(errs, fileParser(tomlFiles, projectPath+"/"+entry.Name())...)
+				mapLangToToml, filepath.Join(path, entry.Name()))...)
+		} else if filepath.Ext(entry.Name()) == ".go" {
+			errs = append(errs, fileParser(mapLangToToml, filepath.Join(path, entry.Name()))...)
 		}
 	}
 
 	return errs
 }
 
+// fileParser is function for parsing go files and finding functions.
 func fileParser(
-	tomlFiles map[string]map[string]interface{},
+	mapLangToToml map[Language]TomlFile,
 	filePath string) (errs []error) {
 	fileSet := token.NewFileSet()
 
 	file, err := os.ReadFile(filePath)
 	if err != nil {
+		err = fmt.Errorf("error in reading file: %s", err)
 		return []error{err}
 	}
 
 	f, err := parser.ParseFile(fileSet, "", file, parser.ParseComments)
 	if err != nil {
+		err = fmt.Errorf("error in parsing file: %s", err)
 		return []error{err}
 	}
 
@@ -59,7 +63,7 @@ func fileParser(
 			if decl.(*ast.FuncDecl).Body != nil {
 				for _, spec := range decl.(*ast.FuncDecl).Body.List {
 					errs = append(errs,
-						parsLineOfCode(spec, tomlFiles)...)
+						parseCode(spec, mapLangToToml)...)
 				}
 			}
 		}
@@ -68,7 +72,8 @@ func fileParser(
 	return errs
 }
 
-func parsLineOfCode(stmt ast.Stmt, tomlFiles map[string]map[string]interface{}) (errs []error) {
+// parseCode is function for parsing each token of code and finding localization functions.
+func parseCode(stmt ast.Stmt, mapLangToToml map[Language]TomlFile) (errs []error) {
 	switch stmt.(type) {
 	case *ast.AssignStmt: // find assignment statement (e.g. var a = "hello")
 		for _, rhs := range stmt.(*ast.AssignStmt).Rhs { // iterate right side of assignment statement
@@ -110,8 +115,9 @@ func parsLineOfCode(stmt ast.Stmt, tomlFiles map[string]map[string]interface{}) 
 					case *ast.Ident: // find identifier (e.g. hello in getMessage(hello))
 						// TODO: check if value is valid in toml files
 					case *ast.BasicLit: // find basic literal (e.g. "world" in getMessage("world"))
+						messageID := rhs.(*ast.CallExpr).Args[index].(*ast.BasicLit).Value
 						errs = append(errs,
-							checkKeyInTomlFiles(tomlFiles, rhs.(*ast.CallExpr).Args[index].(*ast.BasicLit).Value)...)
+							checkKeyInTomlFiles(mapLangToToml, messageID)...)
 					case *ast.SelectorExpr: // find selector expression (e.g. p.hello in getMessage(p.hello))
 						// TODO: check if value is valid in toml files
 					}
@@ -124,38 +130,41 @@ func parsLineOfCode(stmt ast.Stmt, tomlFiles map[string]map[string]interface{}) 
 	switch stmt.(type) {
 	case *ast.ForStmt:
 		for _, stmt := range stmt.(*ast.ForStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
+			errs = append(errs, parseCode(stmt, mapLangToToml)...)
 		}
 	case *ast.RangeStmt:
 		for _, stmt := range stmt.(*ast.RangeStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
+			errs = append(errs, parseCode(stmt, mapLangToToml)...)
 		}
 	case *ast.IfStmt:
 		for _, stmt := range stmt.(*ast.IfStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
+			errs = append(errs, parseCode(stmt, mapLangToToml)...)
 		}
 	case *ast.SwitchStmt:
 		for _, stmt := range stmt.(*ast.SwitchStmt).Body.List {
-			errs = append(errs, parsLineOfCode(stmt, tomlFiles)...)
+			errs = append(errs, parseCode(stmt, mapLangToToml)...)
 		}
 	}
 
 	return errs
 }
 
-func checkKeyInTomlFiles(tomlFiles map[string]map[string]interface{}, arg string) (errs []error) {
-	arg = strings.Trim(arg, "\"")
+// checkKeyInTomlFiles is function for checking if key exists in toml files.
+func checkKeyInTomlFiles(mapLangToToml map[Language]TomlFile, key string) (errs []error) {
+	key = strings.Trim(key, "\"")
+	messageID := MessageID(key)
+
 	// TODO: check if key not in excluding list
-	for lang, val := range tomlFiles {
+	for language, tomlFiles := range mapLangToToml {
 		flag := false
-		for key := range val {
-			if key == arg {
+		for mID := range tomlFiles {
+			if mID == messageID {
 				flag = true
 			}
 		}
 		if !flag {
 			errs = append(errs,
-				fmt.Errorf("key \"%s\" is not valid in language \"%s\"", arg, lang),
+				fmt.Errorf("MessageID \"%s\" is not valid in language \"%s\"", messageID, language),
 			)
 		}
 	}

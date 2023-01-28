@@ -7,47 +7,53 @@ import (
 	"github.com/snapp-incubator/barat/internal/config"
 )
 
-func TomlValidation(tomlFiles map[string]map[string]interface{}) (errs []error) {
-	checkedKeys := map[string]struct{}{}
+// TomlValidation is function for validating toml files. It checks for duplicate and missing messages.
+// It also checks for missing description and other keys.
+func TomlValidation(mapLangToToml map[Language]TomlFile) (errs []error) {
+	checkedKeys := map[MessageID]struct{}{}
 
-	for lang, tomls := range tomlFiles { // lang = en, ru, etc. tomls = map[string]interface{}
-		for key, value := range tomls { // key: [keyInTomlFile] value: description, other, etc.
+	for language, tomlFiles := range mapLangToToml { // lang = en, ru, etc. tomls = map[string]interface{}
+		for messageID, tomlArgs := range tomlFiles { // key: [keyInTomlFile] value: description, other, etc.
 			// check if key is valid for all lang or not
-			_, ok := checkedKeys[key]
+			_, ok := checkedKeys[messageID]
 			if !ok {
-				for lan, _ := range tomlFiles {
-					if !isExcluded(key, config.C.Exclude.RegexKey) {
-						if _, ok := tomlFiles[lan][key]; !ok {
+				for lang, _ := range mapLangToToml {
+					if !isExcluded(messageID, config.C.Exclude.RegexKeys) {
+						if _, ok := mapLangToToml[lang][messageID]; !ok {
 							errs = append(errs,
-								fmt.Errorf("key \"%s\" not found in tag \"%s\"", key, lan))
+								fmt.Errorf("MessageID \"%s\" not found in language \"%s\"", messageID, lang))
 						}
 					}
 				}
-				checkedKeys[key] = struct{}{}
+				checkedKeys[messageID] = struct{}{}
 			}
 
 			// check if value is valid for all tags or not
 			if config.C.Options.Enable.DescriptionCheck {
-				if d, ok := value.(map[string]interface{})["description"]; ok {
+				if d, ok := tomlArgs["description"]; ok {
 					if d == "" {
 						errs = append(errs,
-							fmt.Errorf("description key is empty: key \"%s\", tag \"%s\"", key, lang))
+							fmt.Errorf("description key is empty: MessageID \"%s\", language \"%s\"",
+								messageID, language))
 					}
 				} else {
 					errs = append(errs,
-						fmt.Errorf("description key not found: key \"%s\", tag \"%s\"", key, lang))
+						fmt.Errorf("description key not found: MessageID \"%s\", language \"%s\"",
+							messageID, language))
 				}
 			}
 
 			if config.C.Options.Enable.OtherKeyCheck {
-				if o, ok := value.(map[string]interface{})["other"]; ok {
+				if o, ok := tomlArgs["other"]; ok {
 					if o == "" {
 						errs = append(errs,
-							fmt.Errorf("other key is empty: key \"%s\", tag \"%s\" ", key, lang))
+							fmt.Errorf("other key is empty: MessageID \"%s\", language \"%s\" ",
+								messageID, language))
 					}
 				} else {
 					errs = append(errs,
-						fmt.Errorf("other key not found: key \"%s\", tag \"%s\"", key, lang))
+						fmt.Errorf("other key not found: MessageID \"%s\", language \"%s\"",
+							messageID, language))
 				}
 			}
 		}
@@ -55,10 +61,11 @@ func TomlValidation(tomlFiles map[string]map[string]interface{}) (errs []error) 
 	return errs
 }
 
-func isExcluded(str string, regexes []string) bool {
+// isExcluded is function for checking if key is excluded or not.
+func isExcluded(messageID MessageID, regexes []string) bool {
 	for _, regex := range regexes {
 		re := regexp.MustCompile(regex)
-		rs := re.FindStringSubmatch(str)
+		rs := re.FindStringSubmatch(string(messageID))
 		if len(rs) > 0 {
 			return true
 		}

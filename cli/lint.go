@@ -1,3 +1,4 @@
+// Package cli is the commands collector for the CLI application.
 package cli
 
 import (
@@ -10,28 +11,31 @@ import (
 	"github.com/snapp-incubator/barat/internal/parser"
 )
 
-type checkerCmd struct {
+// lintCmd is the struct for the checker command.
+type lintCmd struct {
 	ConfigPath              string         `help:"Path to config file."`
 	TomlPaths               []string       `name:"toml-paths" help:"paths to load toml files." type:"existingdir"`
-	ExcludeKeyRegex         []string       `short:"e" help:"exclude keys that match the given regex."`
+	ExcludeRegexKey         []string       `short:"e" help:"exclude keys that match the given regex."`
 	MapFunctionNamesToArgNo map[string]int `help:"it's map of the function's name that returns the message by i18n To number of MessageID in arguments."`
 	ProjectPath             string         `help:"paths to project for check all files." type:"existingdir"`
 	ExcludeFolders          []string       `help:"list of exclude folders for check localization."`
 }
 
-func (c *checkerCmd) Run() error {
-	if len(c.ExcludeKeyRegex) > 0 {
+// Run runs the checker command.
+func (c *lintCmd) Run() error {
+	if len(c.ExcludeRegexKey) > 0 {
 		var tmp []string
-		for _, regex := range c.ExcludeKeyRegex {
+		for _, regex := range c.ExcludeRegexKey {
 			regex = strings.Replace(regex, "*", "(.*?)", -1)
 			tmp = append(tmp, regex)
 		}
-		c.ExcludeKeyRegex = tmp
+		c.ExcludeRegexKey = tmp
 	}
 
 	if c.ConfigPath != "" {
 		err := config.LoadConfig(c.ConfigPath)
 		if err != nil {
+			err = fmt.Errorf("error in loading config file: %w", err)
 			return err
 		}
 	} else {
@@ -42,7 +46,7 @@ func (c *checkerCmd) Run() error {
 		config.C = &config.Config{
 			TomlPaths:    c.TomlPaths,
 			ProjectPath:  c.ProjectPath,
-			Exclude:      config.Exclude{Folders: c.ExcludeFolders, RegexKey: c.ExcludeKeyRegex},
+			Exclude:      config.Exclude{Folders: c.ExcludeFolders, RegexKeys: c.ExcludeRegexKey},
 			MessageFuncs: config.ToMessageFuncs(c.MapFunctionNamesToArgNo),
 			Options: config.Opts{
 				Enable: config.Enable{
@@ -55,37 +59,42 @@ func (c *checkerCmd) Run() error {
 		}
 	}
 
-	tomlFiles, err := parser.LoadTomlFiles(config.C.TomlPaths)
+	mapLangToToml, err := parser.LoadTomlFiles()
 	if err != nil {
+		err = fmt.Errorf("error in loading toml files: %w", err)
 		return err
 	}
 
 	// check all toml files for duplicate keys and missing keys
 	var errs []error
+	var cntErr int
 	if config.C.Options.Enable.TomlCheck {
-		errs = parser.TomlValidation(tomlFiles)
+		errs = parser.TomlValidation(mapLangToToml)
+		cntErr += len(errs)
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("toml validation failed: %d errors", len(errs)))
-			errorsShower(errs)
+			printErrors(errs)
 		}
 	}
 
 	// check code for localization functions and find keys that are not available in toml files
 	if config.C.Options.Enable.CodeCheck {
-		errs = parser.CheckCodeForLocalizationFunctions(tomlFiles, config.C.ProjectPath)
+		errs = parser.CheckCodeForLocalizationFunctions(mapLangToToml, config.C.ProjectPath)
+		cntErr += len(errs)
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("code localization validation failed: %d errors", len(errs)))
-			errorsShower(errs)
+			printErrors(errs)
 		}
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %d errors", len(errs))
+		return fmt.Errorf("validation failed: %d errors", cntErr)
 	}
 	return nil
 }
 
-func errorsShower(errs []error) {
+// printErrors prints errors in red color.
+func printErrors(errs []error) {
 	for _, err := range errs {
 		color.Red(">> " + err.Error())
 	}
