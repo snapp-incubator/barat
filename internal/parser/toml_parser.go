@@ -3,15 +3,23 @@ package parser
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+
+	"github.com/snapp-incubator/barat/internal/config"
 
 	"github.com/pelletier/go-toml/v2"
 )
 
+type Language string
+type TomlFile map[MessageID]TomlArgs
+type MessageID string
+type TomlArgs map[string]interface{}
+
 // LoadTomlFiles loads toml files from given paths.
-func LoadTomlFiles(paths []string) (map[string]map[string]interface{}, error) {
-	tomlFiles := make(map[string]map[string]interface{})
-	for _, path := range paths {
+func LoadTomlFiles() (map[Language]TomlFile, error) {
+	mapLangToToml := make(map[Language]TomlFile)
+	for _, path := range config.C.TomlPaths {
 		entries, err := os.ReadDir(path)
 		if err != nil {
 			return nil, err
@@ -22,32 +30,37 @@ func LoadTomlFiles(paths []string) (map[string]map[string]interface{}, error) {
 				continue
 			}
 
-			if len(entry.Name()) > 5 && entry.Name()[len(entry.Name())-5:] == ".toml" {
-				tag := strings.Split(entry.Name(), ".")[1]
-				if _, ok := tomlFiles[tag]; !ok {
-					tomlFiles[tag] = make(map[string]interface{})
+			if filepath.Ext(entry.Name()) == ".toml" {
+				nameList := strings.Split(entry.Name(), ".")
+				if len(nameList) < 3 {
+					return nil, fmt.Errorf("invalid toml file name: %s", entry.Name())
 				}
 
-				tmp := make(map[string]interface{})
+				lang := Language(nameList[1])
+				if _, ok := mapLangToToml[lang]; !ok {
+					mapLangToToml[lang] = make(TomlFile)
+				}
 
-				data, err := os.ReadFile(path + "/" + entry.Name())
+				unmarshalledData := make(TomlFile)
+				data, err := os.ReadFile(filepath.Join(path, entry.Name()))
 				if err != nil {
 					return nil, err
 				}
 
-				err = toml.Unmarshal(data, &tmp)
+				err = toml.Unmarshal(data, &unmarshalledData)
 				if err != nil {
 					return nil, err
 				}
 
-				for k, v := range tmp {
-					if _, ok := tomlFiles[tag][k]; ok {
-						return nil, fmt.Errorf("duplicate key: %s for tag %s in file %s", k, tag, entry.Name())
+				for messageID, tomlArgs := range unmarshalledData {
+					if _, ok := mapLangToToml[lang][messageID]; ok {
+						return nil, fmt.Errorf("duplicate MessageID: %s for language %s in file %s",
+							messageID, lang, entry.Name())
 					}
-					tomlFiles[tag][k] = v
+					mapLangToToml[lang][messageID] = tomlArgs
 				}
 			}
 		}
 	}
-	return tomlFiles, nil
+	return mapLangToToml, nil
 }

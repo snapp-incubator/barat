@@ -17,8 +17,8 @@ type Config struct {
 }
 
 type Exclude struct {
-	Folders  []string `yaml:"folders"`
-	RegexKey []string `yaml:"regex-key"`
+	Folders   []string `yaml:"folders"`
+	RegexKeys []string `yaml:"regex-key"`
 }
 
 type MessageFunc struct {
