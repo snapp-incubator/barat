@@ -15,7 +15,7 @@ type Config struct {
 	ProjectPath  string        `yaml:"project-path"`
 	TomlPaths    []string      `yaml:"toml-path"`
 	Exclude      Exclude       `yaml:"exclude"`
-	MessageFuncs []MessageFunc `yaml:"message-func"`
+	MessageFuncs []MessageFunc `yaml:"message-functions"`
 	Options      Opts          `yaml:"options"`
 }
 
@@ -23,7 +23,7 @@ type Config struct {
 // and regex keys that should be excluded.
 type Exclude struct {
 	Folders   []string `yaml:"folders"`
-	RegexKeys []string `yaml:"regex-key"`
+	RegexKeys []string `yaml:"regex-keys"`
 }
 
 // MessageFunc is the struct for the message-func section in the config file. It contains the function name

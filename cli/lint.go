@@ -11,8 +11,8 @@ import (
 	"github.com/snapp-incubator/barat/internal/parser"
 )
 
-// checkerCmd is the struct for the checker command.
-type checkerCmd struct {
+// lintCmd is the struct for the checker command.
+type lintCmd struct {
 	ConfigPath              string         `help:"Path to config file."`
 	TomlPaths               []string       `name:"toml-paths" help:"paths to load toml files." type:"existingdir"`
 	ExcludeRegexKey         []string       `short:"e" help:"exclude keys that match the given regex."`
@@ -22,7 +22,7 @@ type checkerCmd struct {
 }
 
 // Run runs the checker command.
-func (c *checkerCmd) Run() error {
+func (c *lintCmd) Run() error {
 	if len(c.ExcludeRegexKey) > 0 {
 		var tmp []string
 		for _, regex := range c.ExcludeRegexKey {
@@ -65,11 +65,13 @@ func (c *checkerCmd) Run() error {
 
 	// check all toml files for duplicate keys and missing keys
 	var errs []error
+	var cntErr int
 	if config.C.Options.Enable.TomlCheck {
 		errs = parser.TomlValidation(mapLangToToml)
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("toml validation failed: %d errors", len(errs)))
 			printErrors(errs)
+			cntErr++
 		}
 	}
 
@@ -79,11 +81,12 @@ func (c *checkerCmd) Run() error {
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("code localization validation failed: %d errors", len(errs)))
 			printErrors(errs)
+			cntErr++
 		}
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %d errors", len(errs))
+		return fmt.Errorf("validation failed: %d errors", len(errs)-cntErr)
 	}
 	return nil
 }

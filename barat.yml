@@ -9,18 +9,18 @@ exclude:
   folders:
     - "vendor"
     - "assets"
-  regex-key:
+  regex-keys:
     - "ToBeExcludedKey1"
     - "KeyToBe*"
 
-message-func:
+message-functions:
   - name: "GetMessage"
     message-id-no: 1
 
 options:
   enable:
     toml-check: true
-    description-check: false
+    description-check: true
     other-key-check: true
     code-check: true
 
