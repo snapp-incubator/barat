@@ -35,6 +35,7 @@ func (c *lintCmd) Run() error {
 	if c.ConfigPath != "" {
 		err := config.LoadConfig(c.ConfigPath)
 		if err != nil {
+			err = fmt.Errorf("error in loading config file: %w", err)
 			return err
 		}
 	} else {
@@ -60,6 +61,7 @@ func (c *lintCmd) Run() error {
 
 	mapLangToToml, err := parser.LoadTomlFiles()
 	if err != nil {
+		err = fmt.Errorf("error in loading toml files: %w", err)
 		return err
 	}
 
@@ -68,25 +70,25 @@ func (c *lintCmd) Run() error {
 	var cntErr int
 	if config.C.Options.Enable.TomlCheck {
 		errs = parser.TomlValidation(mapLangToToml)
+		cntErr += len(errs)
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("toml validation failed: %d errors", len(errs)))
 			printErrors(errs)
-			cntErr++
 		}
 	}
 
 	// check code for localization functions and find keys that are not available in toml files
 	if config.C.Options.Enable.CodeCheck {
 		errs = parser.CheckCodeForLocalizationFunctions(mapLangToToml, config.C.ProjectPath)
+		cntErr += len(errs)
 		if errs != nil {
 			errs = append(errs, fmt.Errorf("code localization validation failed: %d errors", len(errs)))
 			printErrors(errs)
-			cntErr++
 		}
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("validation failed: %d errors", len(errs)-cntErr)
+		return fmt.Errorf("validation failed: %d errors", cntErr)
 	}
 	return nil
 }

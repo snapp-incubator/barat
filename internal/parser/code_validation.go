@@ -47,11 +47,13 @@ func fileParser(
 
 	file, err := os.ReadFile(filePath)
 	if err != nil {
+		err = fmt.Errorf("error in reading file: %s", err)
 		return []error{err}
 	}
 
 	f, err := parser.ParseFile(fileSet, "", file, parser.ParseComments)
 	if err != nil {
+		err = fmt.Errorf("error in parsing file: %s", err)
 		return []error{err}
 	}
 
