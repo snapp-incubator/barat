@@ -7,6 +7,8 @@ import (
 	"github.com/snapp-incubator/barat/internal/config"
 )
 
+// TomlValidation is function for validating toml files. It checks for duplicate and missing messages.
+// It also checks for missing description and other keys.
 func TomlValidation(mapLangToToml map[Language]TomlFile) (errs []error) {
 	checkedKeys := map[MessageID]struct{}{}
 
@@ -59,6 +61,7 @@ func TomlValidation(mapLangToToml map[Language]TomlFile) (errs []error) {
 	return errs
 }
 
+// isExcluded is function for checking if key is excluded or not.
 func isExcluded(messageID MessageID, regexes []string) bool {
 	for _, regex := range regexes {
 		re := regexp.MustCompile(regex)

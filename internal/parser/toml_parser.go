@@ -11,9 +11,16 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
+// Language is type for language. It is used as key in map. e.g. en, fa, ...
 type Language string
+
+// TomlFile is type for toml file. you can unmarshal toml file to this type.
 type TomlFile map[MessageID]TomlArgs
+
+// MessageID is type for message id. message id is the main key in toml file. e.g. [NotFound]
 type MessageID string
+
+// TomlArgs is type for toml args. you can unmarshal args of message to this type. e.g. other, description, ...
 type TomlArgs map[string]interface{}
 
 // LoadTomlFiles loads toml files from given paths.

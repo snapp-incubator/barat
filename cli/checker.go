@@ -1,3 +1,4 @@
+// Package cli is the commands collector for the CLI application.
 package cli
 
 import (
@@ -10,6 +11,7 @@ import (
 	"github.com/snapp-incubator/barat/internal/parser"
 )
 
+// checkerCmd is the struct for the checker command.
 type checkerCmd struct {
 	ConfigPath              string         `help:"Path to config file."`
 	TomlPaths               []string       `name:"toml-paths" help:"paths to load toml files." type:"existingdir"`
@@ -19,6 +21,7 @@ type checkerCmd struct {
 	ExcludeFolders          []string       `help:"list of exclude folders for check localization."`
 }
 
+// Run runs the checker command.
 func (c *checkerCmd) Run() error {
 	if len(c.ExcludeRegexKey) > 0 {
 		var tmp []string
@@ -85,6 +88,7 @@ func (c *checkerCmd) Run() error {
 	return nil
 }
 
+// printErrors prints errors in red color.
 func printErrors(errs []error) {
 	for _, err := range errs {
 		color.Red(">> " + err.Error())

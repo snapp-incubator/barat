@@ -12,8 +12,8 @@ import (
 	"github.com/snapp-incubator/barat/internal/config"
 )
 
+// CheckCodeForLocalizationFunctions is function for finding go files and recursive search in directories.
 func CheckCodeForLocalizationFunctions(mapLangToToml map[Language]TomlFile, path string) (errs []error) {
-
 	// recursive search for all files in projectPath
 	entries, err := os.ReadDir(path)
 	if err != nil {
@@ -39,6 +39,7 @@ ENTRY:
 	return errs
 }
 
+// fileParser is function for parsing go files and finding functions.
 func fileParser(
 	mapLangToToml map[Language]TomlFile,
 	filePath string) (errs []error) {
@@ -69,6 +70,7 @@ func fileParser(
 	return errs
 }
 
+// parseCode is function for parsing each token of code and finding localization functions.
 func parseCode(stmt ast.Stmt, mapLangToToml map[Language]TomlFile) (errs []error) {
 	switch stmt.(type) {
 	case *ast.AssignStmt: // find assignment statement (e.g. var a = "hello")
@@ -145,6 +147,7 @@ func parseCode(stmt ast.Stmt, mapLangToToml map[Language]TomlFile) (errs []error
 	return errs
 }
 
+// checkKeyInTomlFiles is function for checking if key exists in toml files.
 func checkKeyInTomlFiles(mapLangToToml map[Language]TomlFile, key string) (errs []error) {
 	key = strings.Trim(key, "\"")
 	messageID := MessageID(key)
