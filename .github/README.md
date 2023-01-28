@@ -47,7 +47,7 @@ barat lint --toml-paths <path to toml files>, <path to toml files>, ... \
 
 Barat support simple regex for exclude keys. When you use `*` in part of your regex, it will be replaced with `(.*?)`.
 
-## Check your code
+### Check your code
 If you want to check your code for missing localization keys, you can use this command:
 
 ```bash
