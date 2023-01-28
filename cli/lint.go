@@ -15,7 +15,7 @@ import (
 type lintCmd struct {
 	ConfigPath              string         `help:"Path to config file."`
 	TomlPaths               []string       `name:"toml-paths" help:"paths to load toml files." type:"existingdir"`
-	ExcludeRegexKey         []string       `short:"e" help:"exclude keys that match the given regex."`
+	ExcludeRegexKeys        []string       `short:"e" help:"exclude keys that match the given regex."`
 	MapFunctionNamesToArgNo map[string]int `help:"it's map of the function's name that returns the message by i18n To number of MessageID in arguments."`
 	ProjectPath             string         `help:"paths to project for check all files." type:"existingdir"`
 	ExcludeFolders          []string       `help:"list of exclude folders for check localization."`
@@ -23,13 +23,13 @@ type lintCmd struct {
 
 // Run runs the checker command.
 func (c *lintCmd) Run() error {
-	if len(c.ExcludeRegexKey) > 0 {
+	if len(c.ExcludeRegexKeys) > 0 {
 		var tmp []string
-		for _, regex := range c.ExcludeRegexKey {
+		for _, regex := range c.ExcludeRegexKeys {
 			regex = strings.Replace(regex, "*", "(.*?)", -1)
 			tmp = append(tmp, regex)
 		}
-		c.ExcludeRegexKey = tmp
+		c.ExcludeRegexKeys = tmp
 	}
 
 	if c.ConfigPath != "" {
@@ -46,7 +46,7 @@ func (c *lintCmd) Run() error {
 		config.C = &config.Config{
 			TomlPaths:    c.TomlPaths,
 			ProjectPath:  c.ProjectPath,
-			Exclude:      config.Exclude{Folders: c.ExcludeFolders, RegexKeys: c.ExcludeRegexKey},
+			Exclude:      config.Exclude{Folders: c.ExcludeFolders, RegexKeys: c.ExcludeRegexKeys},
 			MessageFuncs: config.ToMessageFuncs(c.MapFunctionNamesToArgNo),
 			Options: config.Opts{
 				Enable: config.Enable{
