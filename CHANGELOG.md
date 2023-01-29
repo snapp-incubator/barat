@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## v0.0.2
 
 * Fix duplicate reports bug for missing keys in the toml files. (2023-01-26, @n25a, !5)
 * Support config file as input for checker command. (2023-01-27, @n25a, !6)
