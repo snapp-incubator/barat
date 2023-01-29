@@ -6,6 +6,7 @@
 * Support config file as input for checker command. (2023-01-27, @n25a, !6)
 * Enhancement in code quality. (2023-01-28, @n25a, !7)
 
+
 ## v0.0.1
 
 * Initial release
